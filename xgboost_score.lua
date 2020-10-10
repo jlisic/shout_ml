@@ -204,11 +204,39 @@ build_features = function( clean_text, key_words )
   for i = 1,table.getn(key_words) do
   
     key_word = key_words[i]
-  
-    if string.find( clean_text, key_word) ~= nil then
+          
+    eval_features[i] = 0 
+
+    if key_word == '__gil' then
+      if string.find(clean_text, "[0-9]+(k|m|gil)") ~= nil then 
+        eval_features[i] = 1 
+      end
+    elseif key_word == '__curency' then
+      if string.find(clean_text,"(alexandrite|plouton|beitsu|riftborn|montiont|jadeshell|byne|bayld|heavy[ ]metal|hmp|hpb)") ~= nil then
+        eval_features[i] = 1 
+      end
+    elseif key_word == '__jobs' then
+      if string.find(clean_text,"(war|mnk|whm|rdm|blm|thf|pld|drk|bst|brd|rng|smn|sam|nin|drg|blu|cor|pup|dnc|sch|geo|run)") ~= nil then 
+        eval_features[i] = 1 
+      end
+    elseif key_word == '__roles' then
+      if string.find(clean_text, "(support|healer|tank|dd|melee)") ~= nil then 
+        eval_features[i] = 1 
+      end
+    elseif key_word == '__merc' then
+      if string.find(clean_text, "merc") ~= nil then 
+        eval_features[i] = 1 
+      end
+    elseif key_word == '__omen_big_drops' then
+      if string.find(clean_text, "(regal|dagon|udug|shamash|ashera|nisroch)") ~= nil then 
+        eval_features[i] = 1 
+      end
+    elseif key_word == '__omen_drops' then
+      if string.find(clean_text, "(utu|ammurapi|niqmaddu|shulmanu|dingir|yamarang|lugalbanda|ilabrat|enmerkar|iskur)") ~= nil then 
+        eval_features[i] = 1 
+      end
+    elseif string.find( clean_text, key_word) ~= nil then
       eval_features[i] = 1
-    else
-      eval_features[i] = 0 
     end
   
   end
@@ -300,5 +328,13 @@ eval_phrase = function( value, booster,classes )
 
   return(score)
 end
+
+
+
+
+
+
+
+
 
 
