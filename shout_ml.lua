@@ -13,7 +13,7 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 
 
 _addon.name = 'shout_ml'
-_addon.version = '0.5'
+_addon.version = '0.6'
 _addon.author = 'Epigram (Asura)'
 _addon.command = 'sml'
 
@@ -25,7 +25,33 @@ packets = require('packets')
 config = require('config')
 bit = require('bit')
 
+---------------------------------- load defaults ----------------------------
+defaults = {}
+defaults.display = {}
+defaults.display.pos = {}
+defaults.display.pos.x = 100 
+defaults.display.pos.y = 100 
+defaults.display.bg = {}
+defaults.display.bg.red = 0
+defaults.display.bg.green = 0
+defaults.display.bg.blue = 0
+defaults.display.bg.alpha = 255 
+defaults.display.text = {}
+defaults.display.text.font = 'Consolas'
+defaults.display.text.red = 255
+defaults.display.text.green = 255
+defaults.display.text.blue = 255
+defaults.display.text.alpha = 255
+defaults.display.text.size = 12
 
+-- initial thresholds
+defaults.xgboost_class_threshold = {1.0,0.5,0.5,0.5,1.0,1.0,1.0,1.0}
+
+-- initial allow list
+defaults.xgboost_allow_list = {}
+
+settings = config.load(defaults)
+settings:save() -- make sure we save initial 
 
 
 -- create initial conditions
@@ -35,8 +61,25 @@ xgboost_key_words = {}
 xgboost_debug = false
 
 xgboost_class_names = {'Content','RMT','Merc','JP Merc','Chat','Selling (non-Merc)','Buying (non-Merc)','Unknown'}
+xgboost_players = {}
 
-xgboost_class_threshold = {1.0,0.5,0.5,0.5, 0.5,1.0,1.0,1.0} 
+-- create out box
+--[[
+shout_box = texts.new(settings.display, settings)
+
+shout_box:register_event('reload', function(text, settings)
+
+    local properties = L{}
+    properties:append('Player    Message             ')
+    for i=1,table.getn(xgboost_players) do
+      properties:append('${xgboost_players[i]|-|%08s}')
+    end
+
+    text:clear()
+    text:append(properties:concat('\n'))
+    shout_box:show()
+end)
+]]--
 
 
 
@@ -73,8 +116,16 @@ windower.register_event('incoming chunk', function(id,data)
 
       -- if we can't score we are done
       if booster == nil then
-        return true
+        return nil 
       end
+
+      -- check if there is an allow list option
+      for i=1,table.getn(settings.xgboost_allow_list) do
+        if string.find( clean_text, tostring(settings.xgboost_allow_list[i])) ~= nil then
+          return
+        end
+      end
+
 
       -- calculate 
       xgboost_value = build_features( clean_text, xgboost_key_words )
@@ -92,11 +143,11 @@ windower.register_event('incoming chunk', function(id,data)
       end
 
       if xgboost_debug then
-        windower.add_to_chat(55,'Shout Type:  '..xgboost_class_names[max_class]..', Probability = '.. max_score.. ' threshold = '..xgboost_class_threshold[max_class])
+        windower.add_to_chat(55,'Shout Type:  '..xgboost_class_names[max_class]..', Probability = '.. max_score.. ' threshold = '..settings.xgboost_class_threshold[max_class])
       end
 
       -- block if above a threshold
-      if max_score > xgboost_class_threshold[max_class] then
+      if max_score > settings.xgboost_class_threshold[max_class] then
         return true 
       end
 
@@ -114,12 +165,46 @@ windower.register_event('addon command', function(command, ...)
 
   -- help
   if command == 'help' or command == 'h' then
+        windower.add_to_chat(55,'All yells are classified into one of eight')
+        windower.add_to_chat(55,'categories using machine learning.')
+        windower.add_to_chat(55,' ')
         windower.add_to_chat(55,'Categories:')
         windower.add_to_chat(55,'(1) Content,  (2) RMT,                 (3) Merc,              (4) JP Merc')
         windower.add_to_chat(55,'(5) Chat,     (6) Selling (non-Merc),  (7) Buying (non-Merc), (8) Unknown')
         windower.add_to_chat(55,' ')
-        windower.add_to_chat(55,'set threshold:    t (class 1-8) (threshold 0.0 - 1.0 [default 0.9])')
-        windower.add_to_chat(55,'set debug mode: d')
+        windower.add_to_chat(55,'Set Threshold:')
+        windower.add_to_chat(55,'  t (class 1-8) (threshold 0.0 - 1.0 [default 0.9])')
+        windower.add_to_chat(55,'A higher threshold the less of a chance of seeing this type of yell')
+        windower.add_to_chat(55,'Set to 0 to deny all, and 1 to allow all of a yell type.')
+        windower.add_to_chat(55,' ')
+        windower.add_to_chat(55,'Add Allow-List Phrase:')
+        windower.add_to_chat(55,'  a "phrase"')
+        windower.add_to_chat(55,'Adds a new phrase to the allow-list to skip classification.')
+        windower.add_to_chat(55,' ')
+        windower.add_to_chat(55,'Remove Allow-List Phrase:')
+        windower.add_to_chat(55,'  r (phrase index)')
+        windower.add_to_chat(55,'Remove phrase from allow list.')
+        windower.add_to_chat(55,' ')
+        windower.add_to_chat(55,'Show Status: status or s')
+        windower.add_to_chat(55,' ')
+        windower.add_to_chat(55,'Set Debug Mode: debug or d')
+        return
+  end
+  
+  if command == 'status' or command == 's' then
+        windower.add_to_chat(55,'Categories:')
+        windower.add_to_chat(55,'(1) Content '..settings.xgboost_class_threshold[1])
+        windower.add_to_chat(55,'(2) RMT '..settings.xgboost_class_threshold[2])
+        windower.add_to_chat(55,'(3) Merc '..settings.xgboost_class_threshold[3])
+        windower.add_to_chat(55,'(4) JP Merc '..settings.xgboost_class_threshold[4])
+        windower.add_to_chat(55,'(5) Chat '..settings.xgboost_class_threshold[5])
+        windower.add_to_chat(55,'(6) Selling (non-Merc) '..settings.xgboost_class_threshold[6])
+        windower.add_to_chat(55,'(7) Buying (non-Merc) '..settings.xgboost_class_threshold[7])
+        windower.add_to_chat(55,'(8) Unknown '..settings.xgboost_class_threshold[8])
+        windower.add_to_chat(55,'Allow-List:')
+        for i = 1,table.getn(settings.xgboost_allow_list) do
+          windower.add_to_chat(55,"("..i..") "..settings.xgboost_allow_list[i])
+        end
         return
   end
 
@@ -142,10 +227,41 @@ windower.register_event('addon command', function(command, ...)
         return
       end
 
-      xgboost_class_threshold[threshold_class] = new_threshold
+      settings.xgboost_class_threshold[threshold_class] = new_threshold
       windower.add_to_chat(55,'New Threshold for class '..xgboost_class_names[threshold_class].. ' = '..new_threshold) 
 
+      settings:save() -- save settings 
+
     end
+  end
+  
+  -- allow list
+  if command == 'allow' or command == 'a' then
+    if args[1] then
+
+      new_allow = tostring(args[1])
+      table.insert(settings.xgboost_allow_list, new_allow )
+      windower.add_to_chat(55,'Adding allow list item: '..new_allow) 
+      settings:save() -- save settings 
+    end
+    return
+  end
+  
+  -- allow list
+  if command == 'remove' or command == 'r' then
+    if args[1] then
+      xgboost_index = tonumber(args[1])
+      windower.add_to_chat(55,'args '.. args[1]) 
+      if xgboost_index ~= nil then
+        if (xgboost_index > 0) and (xgboost_index <= table.getn(settings.xgboost_allow_list) ) then
+          windower.add_to_chat(55,'Removed allow list item: '..settings.xgboost_allow_list[xgboost_index]) 
+          table.remove(settings.xgboost_allow_list, xgboost_index )
+          settings:save() -- save settings 
+        end
+        windower.add_to_chat(55,'Is not a valid index '.. xgboost_index) 
+      end
+    end
+    return
   end
 
   -- debug mode
