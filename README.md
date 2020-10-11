@@ -6,7 +6,9 @@ Another blocker, but this one uses machine learning to classify yells into one o
 
 Commands:
 ```
-//sml h    -  help.
-//sml t    -  set the minimum probability of belonging to a class to block.
-//sml d    -  debug (show classification probabilities).
+//sml h                       -  help.
+//sml t (class) (threshold)   -  set the minimum probability of belonging to a class to block.
+//sml a (allow word)          -  allow yells with key phrases to pass through without scoring.
+//sml r (allow word index)    -  remove an allow word.
+//sml d                       -  debug (show classification probabilities).
 ```

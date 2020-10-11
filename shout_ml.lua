@@ -45,10 +45,10 @@ defaults.display.text.alpha = 255
 defaults.display.text.size = 12
 
 -- initial thresholds
-defaults.xgboost_class_threshold = {1.0,0.5,0.5,0.5,1.0,1.0,1.0,1.0}
+defaults.xgboost = {}
+defaults.xgboost.class_threshold = {1.0,0.5,0.5,0.5,1.0,1.0,1.0,1.0}
 
 -- initial allow list
-defaults.xgboost_allow_list = {}
 
 settings = config.load(defaults)
 settings:save() -- make sure we save initial 
@@ -62,6 +62,13 @@ xgboost_debug = false
 
 xgboost_class_names = {'Content','RMT','Merc','JP Merc','Chat','Selling (non-Merc)','Buying (non-Merc)','Unknown'}
 xgboost_players = {}
+
+-- get player names
+player = windower.ffxi.get_player()
+player_name      = player['name']
+
+
+xgboost_allow_list = read_words( windower.addon_path.."data/ffxi_allow_list_"..player_name..".txt")
 
 -- create out box
 --[[
@@ -112,7 +119,10 @@ windower.register_event('incoming chunk', function(id,data)
     local clean_text = windower.convert_auto_trans(chat['Message']):lower()
      
     -- check if it is a yell (maye I should add more cats later
-    if (chat['Mode'] == 26) then
+    if (chat['Mode'] == 26) or (chat['Mode'] == 1) then
+
+
+      shouter = chat['Sender Name']
 
       -- if we can't score we are done
       if booster == nil then
@@ -120,9 +130,9 @@ windower.register_event('incoming chunk', function(id,data)
       end
 
       -- check if there is an allow list option
-      for i=1,table.getn(settings.xgboost_allow_list) do
-        if string.find( clean_text, tostring(settings.xgboost_allow_list[i])) ~= nil then
-          return
+      for i=1,table.getn(xgboost_allow_list) do
+        if windower.regex.match( clean_text, xgboost_allow_list[i]:lower() ) ~= nil then
+          return chat['Message']
         end
       end
 
@@ -143,11 +153,11 @@ windower.register_event('incoming chunk', function(id,data)
       end
 
       if xgboost_debug then
-        windower.add_to_chat(55,'Shout Type:  '..xgboost_class_names[max_class]..', Probability = '.. max_score.. ' threshold = '..settings.xgboost_class_threshold[max_class])
+        windower.add_to_chat(55,'Shout Type:  '..xgboost_class_names[max_class]..', Probability = '.. max_score.. ' threshold = '..settings.xgboost.class_threshold[max_class])
       end
 
       -- block if above a threshold
-      if max_score > settings.xgboost_class_threshold[max_class] then
+      if max_score > settings.xgboost.class_threshold[max_class] then
         return true 
       end
 
@@ -193,17 +203,17 @@ windower.register_event('addon command', function(command, ...)
   
   if command == 'status' or command == 's' then
         windower.add_to_chat(55,'Categories:')
-        windower.add_to_chat(55,'(1) Content '..settings.xgboost_class_threshold[1])
-        windower.add_to_chat(55,'(2) RMT '..settings.xgboost_class_threshold[2])
-        windower.add_to_chat(55,'(3) Merc '..settings.xgboost_class_threshold[3])
-        windower.add_to_chat(55,'(4) JP Merc '..settings.xgboost_class_threshold[4])
-        windower.add_to_chat(55,'(5) Chat '..settings.xgboost_class_threshold[5])
-        windower.add_to_chat(55,'(6) Selling (non-Merc) '..settings.xgboost_class_threshold[6])
-        windower.add_to_chat(55,'(7) Buying (non-Merc) '..settings.xgboost_class_threshold[7])
-        windower.add_to_chat(55,'(8) Unknown '..settings.xgboost_class_threshold[8])
+        windower.add_to_chat(55,'(1) Content '..settings.xgboost.class_threshold[1])
+        windower.add_to_chat(55,'(2) RMT '..settings.xgboost.class_threshold[2])
+        windower.add_to_chat(55,'(3) Merc '..settings.xgboost.class_threshold[3])
+        windower.add_to_chat(55,'(4) JP Merc '..settings.xgboost.class_threshold[4])
+        windower.add_to_chat(55,'(5) Chat '..settings.xgboost.class_threshold[5])
+        windower.add_to_chat(55,'(6) Selling (non-Merc) '..settings.xgboost.class_threshold[6])
+        windower.add_to_chat(55,'(7) Buying (non-Merc) '..settings.xgboost.class_threshold[7])
+        windower.add_to_chat(55,'(8) Unknown '..settings.xgboost.class_threshold[8])
         windower.add_to_chat(55,'Allow-List:')
-        for i = 1,table.getn(settings.xgboost_allow_list) do
-          windower.add_to_chat(55,"("..i..") "..settings.xgboost_allow_list[i])
+        for i = 1,table.getn(xgboost_allow_list) do
+          windower.add_to_chat(55,"("..i..") "..xgboost_allow_list[i])
         end
         return
   end
@@ -227,10 +237,11 @@ windower.register_event('addon command', function(command, ...)
         return
       end
 
-      settings.xgboost_class_threshold[threshold_class] = new_threshold
+      settings.xgboost.class_threshold[threshold_class] = new_threshold
       windower.add_to_chat(55,'New Threshold for class '..xgboost_class_names[threshold_class].. ' = '..new_threshold) 
 
       settings:save() -- save settings 
+      return
 
     end
   end
@@ -240,9 +251,9 @@ windower.register_event('addon command', function(command, ...)
     if args[1] then
 
       new_allow = tostring(args[1])
-      table.insert(settings.xgboost_allow_list, new_allow )
+      table.insert(xgboost_allow_list, new_allow )
+      write_words( windower.addon_path.."data/ffxi_allow_list_"..player_name..".txt", xgboost_allow_list)
       windower.add_to_chat(55,'Adding allow list item: '..new_allow) 
-      settings:save() -- save settings 
     end
     return
   end
@@ -251,14 +262,15 @@ windower.register_event('addon command', function(command, ...)
   if command == 'remove' or command == 'r' then
     if args[1] then
       xgboost_index = tonumber(args[1])
-      windower.add_to_chat(55,'args '.. args[1]) 
       if xgboost_index ~= nil then
-        if (xgboost_index > 0) and (xgboost_index <= table.getn(settings.xgboost_allow_list) ) then
-          windower.add_to_chat(55,'Removed allow list item: '..settings.xgboost_allow_list[xgboost_index]) 
-          table.remove(settings.xgboost_allow_list, xgboost_index )
-          settings:save() -- save settings 
+        if (xgboost_index > 0) and (xgboost_index <= table.getn(xgboost_allow_list) ) then
+          windower.add_to_chat(55,'Removed allow list item: '..xgboost_allow_list[xgboost_index]) 
+          table.remove(xgboost_allow_list, xgboost_index )
+          -- add it to settings
+          write_words( windower.addon_path.."data/ffxi_allow_list_"..player_name..".txt", xgboost_allow_list)
+        else
+          windower.add_to_chat(55,'Is not a valid index '.. xgboost_index) 
         end
-        windower.add_to_chat(55,'Is not a valid index '.. xgboost_index) 
       end
     end
     return

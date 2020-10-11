@@ -195,6 +195,44 @@ function read_key_words ( key_file)
 end
 
 
+function write_words(filename, phrases) 
+  -- identify file to read in
+  key_handle = io.open(filename, 'w')
+  for i =1,table.getn(phrases) do
+    key_handle:write(phrases[i]..'\n')
+  end
+  key_handle:close() 
+end
+
+function read_words(filename) 
+  -- init return
+  cur_phrases = {}
+
+  -- identify file to read in
+  key_handle = io.open(filename, "r")
+  
+  -- check if the file exists 
+  if key_handle == nil then
+    return cur_phrases
+  end
+
+  io.input(key_handle)
+  
+  -- read the current line
+  cur_line = key_handle:read()
+  i = 1 
+  -- check if there is anything to read
+  while cur_line ~= nil do
+    cur_phrases[i] = cur_line
+    cur_line = key_handle:read()
+    i = i + 1
+  end
+
+  key_handle:close()
+
+  return( cur_phrases )
+end
+
 
 
 --build_features
@@ -208,31 +246,31 @@ build_features = function( clean_text, key_words )
     eval_features[i] = 0 
 
     if key_word == '__gil' then
-      if string.find(clean_text, "[0-9]+(k|m|gil)") ~= nil then 
+      if windower.regex.match(clean_text, "[0-9]+(k|m|gil)") ~= nil then 
         eval_features[i] = 1 
       end
     elseif key_word == '__curency' then
-      if string.find(clean_text,"(alexandrite|plouton|beitsu|riftborn|montiont|jadeshell|byne|bayld|heavy[ ]metal|hmp|hpb)") ~= nil then
+      if windower.regex.match(clean_text,"(alexandrite|plouton|beitsu|riftborn|montiont|jadeshell|byne|bayld|heavy[ ]metal|hmp|hpb)") ~= nil then
         eval_features[i] = 1 
       end
     elseif key_word == '__jobs' then
-      if string.find(clean_text,"(war|mnk|whm|rdm|blm|thf|pld|drk|bst|brd|rng|smn|sam|nin|drg|blu|cor|pup|dnc|sch|geo|run)") ~= nil then 
+      if windower.regex.match(clean_text,"(war|mnk|whm|rdm|blm|thf|pld|drk|bst|brd|rng|smn|sam|nin|drg|blu|cor|pup|dnc|sch|geo|run)") ~= nil then 
         eval_features[i] = 1 
       end
     elseif key_word == '__roles' then
-      if string.find(clean_text, "(support|healer|tank|dd|melee)") ~= nil then 
+      if windower.regex.match(clean_text, "(support|healer|tank|dd|melee)") ~= nil then 
         eval_features[i] = 1 
       end
     elseif key_word == '__merc' then
-      if string.find(clean_text, "merc") ~= nil then 
+      if windower.regex.match(clean_text, "merc") ~= nil then 
         eval_features[i] = 1 
       end
     elseif key_word == '__omen_big_drops' then
-      if string.find(clean_text, "(regal|dagon|udug|shamash|ashera|nisroch)") ~= nil then 
+      if windower.regex.match(clean_text, "(regal|dagon|udug|shamash|ashera|nisroch)") ~= nil then 
         eval_features[i] = 1 
       end
     elseif key_word == '__omen_drops' then
-      if string.find(clean_text, "(utu|ammurapi|niqmaddu|shulmanu|dingir|yamarang|lugalbanda|ilabrat|enmerkar|iskur)") ~= nil then 
+      if windower.regex.match(clean_text, "(utu|ammurapi|niqmaddu|shulmanu|dingir|yamarang|lugalbanda|ilabrat|enmerkar|iskur)") ~= nil then 
         eval_features[i] = 1 
       end
     elseif string.find( clean_text, key_word) ~= nil then
