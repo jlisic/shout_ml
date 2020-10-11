@@ -132,7 +132,7 @@ windower.register_event('incoming chunk', function(id,data)
       -- check if there is an allow list option
       for i=1,table.getn(xgboost_allow_list) do
         if windower.regex.match( clean_text, xgboost_allow_list[i]:lower() ) ~= nil then
-          return chat['Message']
+          return 
         end
       end
 
