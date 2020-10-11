@@ -20,10 +20,12 @@ _addon.command = 'sml'
 
 require('luau')
 require('xgboost_score')
+require('string')
 texts = require('texts')
 packets = require('packets')
 config = require('config')
 bit = require('bit')
+require('sets')
 
 ---------------------------------- load defaults ----------------------------
 defaults = {}
@@ -47,12 +49,22 @@ defaults.display.text.size = 12
 -- initial thresholds
 defaults.xgboost = {}
 defaults.xgboost.class_threshold = {1.0,0.5,0.5,0.5,1.0,1.0,1.0,1.0}
+defaults.allow_list = ''
 
 -- initial allow list
 
 settings = config.load(defaults)
 settings:save() -- make sure we save initial 
 
+local allow_list = nil
+local init_allow_list = function()
+  if not settings.allow_list or settings.allow_list == '' then
+    allow_list = S{}
+  else
+    allow_list = S(settings.allow_list:split(','))
+  end
+end
+init_allow_list()
 
 -- create initial conditions
 xgboost_classes = 8
@@ -66,9 +78,6 @@ xgboost_players = {}
 -- get player names
 player = windower.ffxi.get_player()
 player_name      = player['name']
-
-
-xgboost_allow_list = read_words( windower.addon_path.."data/ffxi_allow_list_"..player_name..".txt")
 
 -- create out box
 --[[
@@ -130,9 +139,11 @@ windower.register_event('incoming chunk', function(id,data)
       end
 
       -- check if there is an allow list option
-      for i=1,table.getn(xgboost_allow_list) do
-        if windower.regex.match( clean_text, xgboost_allow_list[i]:lower() ) ~= nil then
-          return 
+      for w in pairs(allow_list) do
+        if w ~= '' then
+          if windower.regex.match( clean_text, w:lower()) ~= nil then
+            return 
+          end
         end
       end
 
@@ -212,8 +223,8 @@ windower.register_event('addon command', function(command, ...)
         windower.add_to_chat(55,'(7) Buying (non-Merc) '..settings.xgboost.class_threshold[7])
         windower.add_to_chat(55,'(8) Unknown '..settings.xgboost.class_threshold[8])
         windower.add_to_chat(55,'Allow-List:')
-        for i = 1,table.getn(xgboost_allow_list) do
-          windower.add_to_chat(55,"("..i..") "..xgboost_allow_list[i])
+        if #allow_list > 0 then
+          windower.add_to_chat(55,allow_list:concat(', '))
         end
         return
   end
@@ -250,10 +261,15 @@ windower.register_event('addon command', function(command, ...)
   if command == 'allow' or command == 'a' then
     if args[1] then
 
-      new_allow = tostring(args[1])
-      table.insert(xgboost_allow_list, new_allow )
-      write_words( windower.addon_path.."data/ffxi_allow_list_"..player_name..".txt", xgboost_allow_list)
-      windower.add_to_chat(55,'Adding allow list item: '..new_allow) 
+      local new_allow = tostring(args[1]):lower()
+      if allow_list[new_allow] then
+        windower.add_to_chat(55, 'Allow word already exists: '..new_allow)
+      else
+        allow_list:add(new_allow)
+        settings.allow_list = allow_list:concat(',')
+        settings:save()
+        windower.add_to_chat(55,'Adding allow list item: '..new_allow) 
+      end
     end
     return
   end
@@ -261,16 +277,18 @@ windower.register_event('addon command', function(command, ...)
   -- allow list
   if command == 'remove' or command == 'r' then
     if args[1] then
-      xgboost_index = tonumber(args[1])
-      if xgboost_index ~= nil then
-        if (xgboost_index > 0) and (xgboost_index <= table.getn(xgboost_allow_list) ) then
-          windower.add_to_chat(55,'Removed allow list item: '..xgboost_allow_list[xgboost_index]) 
-          table.remove(xgboost_allow_list, xgboost_index )
-          -- add it to settings
-          write_words( windower.addon_path.."data/ffxi_allow_list_"..player_name..".txt", xgboost_allow_list)
+      local word = tostring(args[1]):lower()
+      if allow_list[word] then
+        allow_list:remove(word)
+        if #allow_list > 0 then
+          settings.allow_list = allow_list:concat(',')
         else
-          windower.add_to_chat(55,'Is not a valid index '.. xgboost_index) 
+          settings.allow_list = ''
         end
+        settings:save()
+        windower.add_to_chat(55,'Removed allow list item: '..word) 
+      else
+        windower.add_to_chat(55,'Word not in allow list: '..word) 
       end
     end
     return
@@ -291,6 +309,6 @@ windower.register_event('addon command', function(command, ...)
 
 end)
 
-
-
-
+windower.register_event('login', function(command, ...)
+  init_allow_list:schedule(1)
+end)
