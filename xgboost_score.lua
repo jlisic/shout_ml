@@ -68,6 +68,9 @@ function read_booster ( ml_file)
   
       -- get the leaf value 
       leaf=string.match(cur_line,"[-]*%d+[.]%d+[%d.eE+-]*")
+      if( leaf == nil ) then
+        leaf=string.match(cur_line,"[-]*%d+")
+      end
       cur_node[node].leaf = tonumber(leaf)
   
   
@@ -353,12 +356,14 @@ end
 print_features = function( values, key_words ) 
  
 
-  for i = 1,table.getn(key_words) do
+for i = 1,table.getn(key_words) do
   
     key_word = key_words[i]
     value = values[i] 
 
-    print( i..":\t "..value.."  "..key_word)
+    if value ~= 0  then
+      print( i..":\t "..value.."  "..key_word)
+    end
   
   
   end
@@ -414,7 +419,6 @@ eval_phrase = function( value, booster,classes )
 --      print("######## Booster Tree " .. i .. " of " .. classes .. " ########")
     end
     score[xgboost_class] = score[xgboost_class] + eval_tree( 1, booster[i], value) 
---    print("class:  "..class.." score:  "..score[class]) 
 
   end
 

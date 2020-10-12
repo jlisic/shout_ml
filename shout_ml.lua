@@ -130,13 +130,13 @@ windower.register_event('incoming chunk', function(id,data)
     -- check if it is a yell (maye I should add more cats later
     if (chat['Mode'] == 26) or (chat['Mode'] == 1) then
 
-
       shouter = chat['Sender Name']
 
       -- if we can't score we are done
       if booster == nil then
         return nil 
       end
+
 
       -- check if there is an allow list option
       for w in pairs(allow_list) do
@@ -153,6 +153,7 @@ windower.register_event('incoming chunk', function(id,data)
       class_score = eval_phrase( xgboost_value, xgboost_booster,xgboost_classes) 
       max_score = 0
       max_class = 1
+      
 
       for i = 1,xgboost_classes do
 
@@ -203,7 +204,7 @@ windower.register_event('addon command', function(command, ...)
         windower.add_to_chat(55,'Adds a new phrase to the allow-list to skip classification.')
         windower.add_to_chat(55,' ')
         windower.add_to_chat(55,'Remove Allow-List Phrase:')
-        windower.add_to_chat(55,'  r (phrase index)')
+        windower.add_to_chat(55,'  r "phrase"')
         windower.add_to_chat(55,'Remove phrase from allow list.')
         windower.add_to_chat(55,' ')
         windower.add_to_chat(55,'Show Status: status or s')
@@ -223,8 +224,10 @@ windower.register_event('addon command', function(command, ...)
         windower.add_to_chat(55,'(7) Buying (non-Merc) '..settings.xgboost.class_threshold[7])
         windower.add_to_chat(55,'(8) Unknown '..settings.xgboost.class_threshold[8])
         windower.add_to_chat(55,'Allow-List:')
-        if #allow_list > 0 then
-          windower.add_to_chat(55,allow_list:concat(', '))
+        for w in pairs(allow_list) do
+          if w ~= '' then
+            windower.add_to_chat(55,w..'\n')
+          end
         end
         return
   end
@@ -274,7 +277,7 @@ windower.register_event('addon command', function(command, ...)
     return
   end
   
-  -- allow list
+  -- allow list remove
   if command == 'remove' or command == 'r' then
     if args[1] then
       local word = tostring(args[1]):lower()
