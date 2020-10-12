@@ -333,6 +333,10 @@ build_features = function( clean_text, key_words )
       if windower.regex.match(clean_text, "(mars|venus)[ ]orb" ) ~= nil then 
         eval_features[i] = 1 
       end
+    elseif key_word == "__mythic_merc" then
+      if windower.regex.match(clean_text, "(tinnin|tyger|sarameya)") ~= nil then 
+        eval_features[i] = 1 
+      end
     elseif string.find( clean_text, key_word) ~= nil then
       eval_features[i] = 1
     end
