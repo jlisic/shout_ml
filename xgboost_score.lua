@@ -233,6 +233,33 @@ function read_words(filename)
   return( cur_phrases )
 end
 
+--[[
+                                                                                                                                                                                                                                                                                          
+                                                                                                                                                                                                                                                                                          
+# feature name                                                                                                                                                                                                                                                                            
+add_features_names <- c('__gil','__currency','__jobs','__roles','__merc','__omen_big_drops','__omen_drops', 
+i
+'__mythic_merc'
+"(tinnin|tyger|sarameya)"
+
+'__abyssea_merc'
+"(colorless|chloris|ulhuadshi|dragua|glavoid|itzpapalot|orthus|briareus|sobek|apademak|carabosse|cirein-croin|isgebind|fistule|bukhis|alfard|azdaja)"
+'__htbm_merc'
+"(daybreak|sacro|malignance|lilith|odin|gere|freke|palug|hjarrandi|zantetsuken|geirrothr)"
+'__bazaar_loc'
+"[(][a-z]-[1-9][)]"
+'__bazaar_item'
+"(blured|raetic|voodoo)"
+'__dyna_item'
+"(voidhead|voidleg|voidhand|voidfeet|beastman|kindred)"
+'__vagary_boss'
+"(vagary|perfidien|plouton|putraxia)" 
+'__power_level'
+"(^| )pl[ ]" 
+"__aman_orbs"
+"(mars|venus)[ ]orb" 
+     
+]]--
 
 
 --build_features
@@ -250,7 +277,7 @@ build_features = function( clean_text, key_words )
         eval_features[i] = 1 
       end
     elseif key_word == '__curency' then
-      if windower.regex.match(clean_text,"(alexandrite|plouton|beitsu|riftborn|montiont|jadeshell|byne|bayld|heavy[ ]metal|hmp|hpb)") ~= nil then
+      if windower.regex.match(clean_text,"(alexandrite|plouton|beitsu|riftborn|montiont|jadeshell|byne|bayld|heavy[ ]metal|hmp|hpb|riftcinder)") ~= nil then
         eval_features[i] = 1 
       end
     elseif key_word == '__jobs' then
@@ -258,7 +285,7 @@ build_features = function( clean_text, key_words )
         eval_features[i] = 1 
       end
     elseif key_word == '__roles' then
-      if windower.regex.match(clean_text, "(support|healer|tank|dd|melee)") ~= nil then 
+      if windower.regex.match(clean_text, "(support|healer|tank|dd|melee|job)") ~= nil then 
         eval_features[i] = 1 
       end
     elseif key_word == '__merc' then
@@ -270,7 +297,40 @@ build_features = function( clean_text, key_words )
         eval_features[i] = 1 
       end
     elseif key_word == '__omen_drops' then
-      if windower.regex.match(clean_text, "(utu|ammurapi|niqmaddu|shulmanu|dingir|yamarang|lugalbanda|ilabrat|enmerkar|iskur)") ~= nil then 
+      if windower.regex.match(clean_text, 
+        "(utu|ammurapi|niqmaddu|shulmanu|dingir|yamarang|lugalbanda|ilabrat|enmerkar|iskur|sherida)") ~= nil then 
+        eval_features[i] = 1 
+      end
+    elseif key_word == '__abyssea_merc' then
+      if windower.regex.match(clean_text, "(colorless|chloris|ulhuadshi|dragua|glavoid|itzpapalot|orthus|briareus|sobek|apademak|carabosse|cirein-croin|isgebind|fistule|bukhis|alfard|azdaja)" ) ~= nil then 
+        eval_features[i] = 1 
+      end
+    elseif key_word == '__htbm_merc' then
+      if windower.regex.match(clean_text, "(daybreak|sacro|malignance|lilith|odin|gere|freke|palug|hjarrandi|zantetsuken|geirrothr)") ~= nil then 
+        eval_features[i] = 1 
+      end
+    elseif key_word == '__bazaar_loc' then
+      if windower.regex.match(clean_text, "[(][a-z]-[1-9][)]") ~= nil then 
+        eval_features[i] = 1 
+      end
+    elseif key_word == '__bazaar_item' then
+      if windower.regex.match(clean_text, "(blured|raetic|voodoo)") ~= nil then 
+        eval_features[i] = 1 
+      end
+    elseif key_word == '__dyna_item' then
+      if windower.regex.match(clean_text, "(voidhead|voidleg|voidhand|voidfeet|beastman|kindred)") ~= nil then 
+        eval_features[i] = 1 
+      end
+    elseif key_word == '__vagary_boss' then
+      if windower.regex.match(clean_text, "(vagary|perfidien|plouton|putraxia)" ) ~= nil then 
+        eval_features[i] = 1 
+      end
+    elseif key_word == '__power_level' then
+      if windower.regex.match(clean_text, "(^| )pl[ ]" ) ~= nil then 
+        eval_features[i] = 1 
+      end
+    elseif key_word == "__aman_orbs" then
+      if windower.regex.match(clean_text, "(mars|venus)[ ]orb" ) ~= nil then 
         eval_features[i] = 1 
       end
     elseif string.find( clean_text, key_word) ~= nil then

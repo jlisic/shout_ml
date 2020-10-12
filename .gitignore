@@ -1,2 +1,5 @@
-
 data/settings.xml
+*.swo
+*.swp
+test.lua
+.plan.txt
