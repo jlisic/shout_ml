@@ -11,4 +11,8 @@ Commands:
 //sml a (allow word)          -  allow yells with key phrases to pass through without scoring.
 //sml r (allow word index)    -  remove an allow word.
 //sml d                       -  debug (show classification probabilities).
+//sml show                    -  show content window.
+//sml hide                    -  hide content window.
+//sml cb                      -  block player from content window (nothing else).
+//sml ct                      -  set max time to keep a yell on the content window after last shout.
 ```
