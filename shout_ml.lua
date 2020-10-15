@@ -13,7 +13,7 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 
 
 _addon.name = 'shout_ml'
-_addon.version = '0.7'
+_addon.version = '0.81'
 _addon.author = 'Epigram (Asura)'
 _addon.command = 'sml'
 
@@ -50,6 +50,10 @@ defaults.display.text.size = 12
 defaults.xgboost = {}
 defaults.xgboost.class_threshold = {1.0,0.5,0.5,0.5,1.0,1.0,1.0,1.0}
 defaults.allow_list = ''
+defaults.block_list = S{} -- used to block people from showing up in the chat window 
+
+-- window function
+defaults.max_minutes = 10
 
 -- initial allow list
 
@@ -73,29 +77,60 @@ xgboost_key_words = {}
 xgboost_debug = false
 
 xgboost_class_names = {'Content','RMT','Merc','JP Merc','Chat','Selling (non-Merc)','Buying (non-Merc)','Unknown'}
-xgboost_players = {}
+
+info = {}
+info.input = ''
+info.xgboost_max_index = 8
+info.xgboost_players = S{}
+info.xgboost_messages = S{}
+info.xgboost_messages_time = {}
+
 
 -- get player names
 player = windower.ffxi.get_player()
 player_name      = player['name']
 
+
+
+
+
+-- update the message
+xgboost_update_text = function( x )
+
+  local tmp = "" 
+  local time_update = 0
+  for i=1,table.getn(x.xgboost_players) do
+    
+    time_update = os.time() - x.xgboost_messages_time[i]
+    if( time_update < 60) then
+      time_update = tostring( time_update)..'s'
+    elseif time_update < 3600 then
+      time_update = tostring( math.floor(time_update / 60))..'m'
+    else
+      time_update = tostring( math.floor(time_update / 3600))..'h'
+    end
+
+    tmp = tmp..string.format( "%2d. %15s:  %80s   %10s\n", i, x.xgboost_players[i], string.sub(x.xgboost_messages[i],1,80), time_update) 
+  end
+
+  x.input = tmp
+
+  return x
+end
+
+
 -- create out box
---[[
 shout_box = texts.new(settings.display, settings)
 
 shout_box:register_event('reload', function(text, settings)
 
     local properties = L{}
-    properties:append('Player    Message             ')
-    for i=1,table.getn(xgboost_players) do
-      properties:append('${xgboost_players[i]|-|%08s}')
-    end
+    properties:append(string.format("   %15s   %80s   %10s", 'Player', 'Message', 'time'))
+    properties:append('${input|-}')
 
     text:clear()
     text:append(properties:concat('\n'))
-    shout_box:show()
 end)
-]]--
 
 
 
@@ -113,6 +148,7 @@ windower.register_event('load',function()
   end  
 
 end)
+
 
 
 
@@ -164,6 +200,7 @@ windower.register_event('incoming chunk', function(id,data)
 
       end
 
+
       if xgboost_debug then
         windower.add_to_chat(55,'Shout Type:  '..xgboost_class_names[max_class]..', Probability = '.. max_score.. ' threshold = '..settings.xgboost.class_threshold[max_class])
       end
@@ -171,6 +208,39 @@ windower.register_event('incoming chunk', function(id,data)
       -- block if above a threshold
       if max_score > settings.xgboost.class_threshold[max_class] then
         return true 
+      end
+        
+      if max_class == 1 then
+
+        for i = 1,table.getn(settings.block_list) do 
+          if shouter == settings.block_list[i] then
+           return
+          end 
+        end
+        
+
+        for i=1,table.getn(info.xgboost_players) do
+          if shouter == info.xgboost_players[i] then
+            table.remove(info.xgboost_players,i)
+            table.remove(info.xgboost_messages,i)
+            table.remove(info.xgboost_messages_time,i)
+            break
+          end
+        end
+
+        if table.getn(info.xgboost_players) >= info.xgboost_max_index then
+            table.remove(info.xgboost_players,info.xgboost_max_index)
+            table.remove(info.xgboost_messages,info.xgboost_max_index)
+            table.remove(info.xgboost_messages_time,info.xgboost_max_index)
+        end
+        
+        table.insert(info.xgboost_players,shouter)
+        table.insert(info.xgboost_messages,clean_text)
+        table.insert(info.xgboost_messages_time,os.time())
+
+        info = xgboost_update_text( info)
+
+        shout_box:update(info)
       end
 
     end
@@ -209,6 +279,14 @@ windower.register_event('addon command', function(command, ...)
         windower.add_to_chat(55,' ')
         windower.add_to_chat(55,'Show Status: status or s')
         windower.add_to_chat(55,' ')
+        windower.add_to_chat(55,'Show Content Window: show')
+        windower.add_to_chat(55,' ')
+        windower.add_to_chat(55,'Hide Content Window: hide')
+        windower.add_to_chat(55,' ')
+        windower.add_to_chat(55,'Block Player from Content Window: cb (row number)')
+        windower.add_to_chat(55,' ')
+        windower.add_to_chat(55,'Content Window Message Time-Out: ct (time in minutes)')
+        windower.add_to_chat(55,' ')
         windower.add_to_chat(55,'Set Debug Mode: debug or d')
         return
   end
@@ -229,6 +307,12 @@ windower.register_event('addon command', function(command, ...)
             windower.add_to_chat(55,w..'\n')
           end
         end
+        windower.add_to_chat(55,'Content Window Max Minutes:  '..settings.max_minutes)
+        windower.add_to_chat(55,'Content Window Block List:')
+        for i = 1,table.getn(settings.block_list) do 
+          windower.add_to_chat(55,settings.block_list[i]..'\n')
+        end
+
         return
   end
 
@@ -296,6 +380,59 @@ windower.register_event('addon command', function(command, ...)
     end
     return
   end
+   
+  -- show window
+  if command == 'show' then
+    shout_box:show()
+  end
+
+  -- hide window
+  if command == 'hide' then
+    shout_box:hide()
+  end
+  
+  
+  --  max_time
+  if command == 'content_time' or command == 'ct' then
+    if args[1] then
+      minutes = tonumber(args[1])
+      if minutes ~= nil then
+        if (minutes > 0) then
+          settings.max_minutes = minutes
+          settings:save() -- make sure we save initial 
+          return
+        end
+        windower.add_to_chat(55,'Not a valid number of minutes: '..args[1]) 
+        return
+      end
+      windower.add_to_chat(55,'Not a valid number of minutes: '..args[1]) 
+      return
+    end
+  end
+
+  
+  -- allow list remove
+  if command == 'content_block' or command == 'cb' then
+    if args[1] then
+      n = table.getn(info.xgboost_players)
+      j = tonumber(args[1])
+      if j ~= nil then
+        if (j > 0) and ( j <= n) then
+          windower.add_to_chat(55,'Removing: '..info.xgboost_players[j]) 
+          table.insert(settings.block_list,info.xgboost_players[j])
+          settings:save() 
+          table.remove(info.xgboost_players,j)
+          table.remove(info.xgboost_messages,j)
+          table.remove(info.xgboost_messages_time,j)
+          return
+        end
+        windower.add_to_chat(55,'Not a valid row: '..j..n) 
+        return
+      end
+      windower.add_to_chat(55,'Not a valid row: '..args[1]) 
+      return
+    end
+  end
 
   -- debug mode
   if command == 'debug' or command == 'd' then
@@ -311,7 +448,27 @@ windower.register_event('addon command', function(command, ...)
 
 
 end)
+          
+  
+
+-- update box on change 
+windower.register_event('time change', function(new, old)
+  info = xgboost_update_text( info)
+  shout_box:update(info)
+  for i=1,table.getn(info.xgboost_players) do
+    if (os.time() - info.xgboost_messages_time[i])/60 > settings.max_minutes  then
+      table.remove(info.xgboost_players,i)
+      table.remove(info.xgboost_messages,i)
+      table.remove(info.xgboost_messages_time,i)
+      break
+    end
+  end
+end)
 
 windower.register_event('login', function(command, ...)
   init_allow_list:schedule(1)
+end)
+          
+windower.register_event('logout', function()
+    shout_box:hide(info)
 end)

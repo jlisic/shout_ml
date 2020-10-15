@@ -304,6 +304,10 @@ build_features = function( clean_text, key_words )
         "(utu|ammurapi|niqmaddu|shulmanu|dingir|yamarang|lugalbanda|ilabrat|enmerkar|iskur|sherida)") ~= nil then 
         eval_features[i] = 1 
       end
+    elseif key_word == "__mythic_merc" then
+      if windower.regex.match(clean_text, "(tinnin|tyger|sarameya)") ~= nil then 
+        eval_features[i] = 1 
+      end
     elseif key_word == '__abyssea_merc' then
       if windower.regex.match(clean_text, "(colorless|chloris|ulhuadshi|dragua|glavoid|itzpapalot|orthus|briareus|sobek|apademak|carabosse|cirein-croin|isgebind|fistule|bukhis|alfard|azdaja)" ) ~= nil then 
         eval_features[i] = 1 
@@ -317,27 +321,47 @@ build_features = function( clean_text, key_words )
         eval_features[i] = 1 
       end
     elseif key_word == '__bazaar_item' then
-      if windower.regex.match(clean_text, "(blured|raetic|voodoo)") ~= nil then 
+      if windower.regex.match(clean_text, "(blured|blurred|raetic|voodoo|jinxed|vexed)") ~= nil then 
         eval_features[i] = 1 
       end
     elseif key_word == '__dyna_item' then
-      if windower.regex.match(clean_text, "(voidhead|voidleg|voidhand|voidfeet|beastman|kindred)") ~= nil then 
+      if windower.regex.match(clean_text, "(voidhead|voidleg|voidhand|voidfeet|voidtorso|voidbody|beastman|kindred)") ~= nil then 
         eval_features[i] = 1 
       end
-    elseif key_word == '__vagary_boss' then
-      if windower.regex.match(clean_text, "(vagary|perfidien|plouton|putraxia)" ) ~= nil then 
+    elseif key_word == '__job_points' then
+      if windower.regex.match(clean_text, "(job points|jobpoints|merit points|meritpoint|experiencepoints|experience points|^exp[ ]|[ ]exp[ ])") ~= nil then 
         eval_features[i] = 1 
       end
     elseif key_word == '__power_level' then
       if windower.regex.match(clean_text, "(^| )pl[ ]" ) ~= nil then 
         eval_features[i] = 1 
       end
+    elseif key_word == '__vagary_boss' then
+      if windower.regex.match(clean_text, "(vagary|perfidien|plouton|putraxia)" ) ~= nil then 
+        eval_features[i] = 1 
+      end
     elseif key_word == "__aman_orbs" then
       if windower.regex.match(clean_text, "(mars|venus)[ ]orb" ) ~= nil then 
         eval_features[i] = 1 
       end
-    elseif key_word == "__mythic_merc" then
-      if windower.regex.match(clean_text, "(tinnin|tyger|sarameya)") ~= nil then 
+    elseif key_word == "__dynamis" then
+      if windower.regex.match(clean_text, "(dynamis|[d]|(d))" ) ~= nil then 
+        eval_features[i] = 1 
+      end
+    elseif key_word == "__content" then
+      if windower.regex.match(clean_text, "(omen|kei|kyou|kin|gin|fu|[ ]ou|^ou|ambuscade|[ ]sr|^sr)" ) ~= nil then 
+        eval_features[i] = 1 
+      end
+    elseif key_word == "__buy" then
+      if windower.regex.match(clean_text, "(buy[ ]|buy$|sell[?]|wtb|reward|price)" ) ~= nil then 
+        eval_features[i] = 1 
+      end
+    elseif key_word == "__sell" then
+      if windower.regex.match(clean_text, "(sell[ ]|sell$|buy[?]|wts)" ) ~= nil then 
+        eval_features[i] = 1 
+      end
+    elseif key_word == "__social" then
+      if windower.regex.match(clean_text, "(linkshell|schedule|event|social|^ls[ ]|[ ]ls[ ]|concierge)" ) ~= nil then 
         eval_features[i] = 1 
       end
     elseif string.find( clean_text, key_word) ~= nil then
