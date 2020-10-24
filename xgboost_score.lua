@@ -264,6 +264,57 @@ i
      
 ]]--
 
+--[[
+
+gil 
+"(alexandrite|plouton|beitsu|riftborn|montiont|jadeshell|byne|bayld|heavy[ ]metal|hmp|hpb|riftcinder)"
+jobs 
+"(war|mnk|whm|rdm|blm|thf|pld|drk|bst|brd|rng|smn|sam|nin|drg|blu|cor|pup|dnc|sch|geo|run|warrior|monk|mage|theif|paladin|knight|beastmaster|bard|ranger|summoner|samurai|ninja|dragoon|corsair|puppet|dancer|scholar|geomancer|rune)"
+roles 
+"(support|healer|tank|dd|melee|job)"
+merc 
+"merc",test_train$msg, ignore.case = TRUE) )
+omen_big_drops 
+"(regal|dagon|udug|shamash|ashera|nisroch)"
+omen_drops 
+"(utu|ammurapi|niqmaddu|shulmanu|dingir|yamarang|lugalbanda|ilabrat|enmerkar|iskur|sherida)"
+mythic_merc 
+"(tinnin|tyger|sarameya)"
+abyssea_merc 
+"(colorless|chloris|ulhuadshi|dragua|glavoid|itzpapalot|orthus|briareus|sobek|apademak|carabosse|cirein-croin|isgebind|fistule|bukhis|alfard|azdaja)"
+htbm_merc 
+"(daybreak|sacro|malignance|lilith|odin|gere|freke|palug|hjarrandi|zantetsuken|geirrothr)"
+bazaar_loc 
+"[(][a-z]-[1-9][)]",test_train$msg, ignore.case = TRUE) )
+bazaar_item 
+"(blured|blurred|raetic|voodoo|jinxed|vexed)"
+dyna_item 
+"(voidhead|voidleg|voidhand|voidfeet|voidtorso|voidbody|beastman|kindred)"
+job_points 
+ as.numeric(grepl(
+"(job points|jobpoints|merit points|meritpoint|experiencepoints|experience points|^exp[ ]|[ ]exp[ ])"
+,test_train$msg, ignore.case 
+ TRUE) )
+power_level 
+"(^| )pl[ ]" ,test_train$msg, ignore.case = TRUE) )
+vagary_boss 
+"(vagary|perfidien|plouton|putraxia)"
+aman_orbs 
+"(mars|venus)[ ]orb" ,test_train$msg, ignore.case = TRUE) )
+dynamis 
+"(dynamis|[d]|(d))"
+content 
+"(omen|kei|kyou|kin|gin|fu|[ ]ou|^ou|ambuscade|[ ]sr|^sr)"
+buy 
+"(buy[ ]|buy$|sell[?]|wtb|reward|price)"
+sell 
+"(sell[ ]|sell$|buy[?]|wts)"
+social 
+"(linkshell|schedule|event|social|^ls[ ]|[ ]ls[ ]|concierge)"
+
+
+
+--]]
 
 --build_features
 build_features = function( clean_text, key_words )
@@ -279,16 +330,18 @@ build_features = function( clean_text, key_words )
       if windower.regex.match(clean_text, "[0-9]+(k|m|gil)") ~= nil then 
         eval_features[i] = 1 
       end
-    elseif key_word == '__curency' then
+    elseif key_word == '__currency' then
       if windower.regex.match(clean_text,"(alexandrite|plouton|beitsu|riftborn|montiont|jadeshell|byne|bayld|heavy[ ]metal|hmp|hpb|riftcinder)") ~= nil then
         eval_features[i] = 1 
       end
     elseif key_word == '__jobs' then
-      if windower.regex.match(clean_text,"(war|mnk|whm|rdm|blm|thf|pld|drk|bst|brd|rng|smn|sam|nin|drg|blu|cor|pup|dnc|sch|geo|run)") ~= nil then 
+      if windower.regex.match(clean_text, "(war|mnk|whm|rdm|blm|thf|pld|drk|bst|brd|rng|smn|sam|nin|drg|blu|cor|pup|dnc|sch|geo|run|warrior|monk|mage|theif|paladin|knight|beastmaster|bard|ranger|summoner|samurai|ninja|dragoon|corsair|puppet|dancer|scholar|geomancer|rune)") ~= nil then 
         eval_features[i] = 1 
       end
     elseif key_word == '__roles' then
-      if windower.regex.match(clean_text, "(support|healer|tank|dd|melee|job)") ~= nil then 
+      if windower.regex.match(clean_text, 
+        "(support|healer|tank|dd|melee|job)"
+        ) ~= nil then 
         eval_features[i] = 1 
       end
     elseif key_word == '__merc' then

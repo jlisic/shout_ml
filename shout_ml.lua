@@ -37,7 +37,7 @@ defaults.display.bg = {}
 defaults.display.bg.red = 0
 defaults.display.bg.green = 0
 defaults.display.bg.blue = 0
-defaults.display.bg.alpha = 255 
+defaults.display.bg.alpha = 155 
 defaults.display.text = {}
 defaults.display.text.font = 'Consolas'
 defaults.display.text.red = 255
@@ -50,7 +50,7 @@ defaults.display.text.size = 12
 defaults.xgboost = {}
 defaults.xgboost.class_threshold = {1.0,0.5,0.5,0.5,1.0,1.0,1.0,1.0}
 defaults.allow_list = ''
-defaults.block_list = S{} -- used to block people from showing up in the chat window 
+--defaults.block_list = S{} -- used to block people from showing up in the chat window 
 
 -- window function
 defaults.max_minutes = 10
@@ -110,7 +110,10 @@ xgboost_update_text = function( x )
       time_update = tostring( math.floor(time_update / 3600))..'h'
     end
 
-    tmp = tmp..string.format( "%2d. %15s:  %80s   %10s\n", i, x.xgboost_players[i], string.sub(x.xgboost_messages[i],1,80), time_update) 
+    tmp = tmp..string.format( "%2d. %15s:  %60s   %5s\n", i, x.xgboost_players[i], string.sub(x.xgboost_messages[i],1,60), time_update) 
+    if string.len(x.xgboost_messages[i]) > 60 then
+    tmp = tmp..string.format( "    %15s   %60s   %5s\n",  "", string.sub(x.xgboost_messages[i],61,120), "") 
+    end
   end
 
   x.input = tmp
@@ -125,7 +128,7 @@ shout_box = texts.new(settings.display, settings)
 shout_box:register_event('reload', function(text, settings)
 
     local properties = L{}
-    properties:append(string.format("   %15s   %80s   %10s", 'Player', 'Message', 'time'))
+    properties:append(string.format("   %15s   %60s   %5s", 'Player', 'Message', 'Time'))
     properties:append('${input|-}')
 
     text:clear()
@@ -211,12 +214,13 @@ windower.register_event('incoming chunk', function(id,data)
       end
         
       if max_class == 1 then
-
+        --[[
         for i = 1,table.getn(settings.block_list) do 
           if shouter == settings.block_list[i] then
            return
           end 
         end
+        --]]
         
 
         for i=1,table.getn(info.xgboost_players) do
@@ -283,8 +287,10 @@ windower.register_event('addon command', function(command, ...)
         windower.add_to_chat(55,' ')
         windower.add_to_chat(55,'Hide Content Window: hide')
         windower.add_to_chat(55,' ')
+        --[[
         windower.add_to_chat(55,'Block Player from Content Window: cb (row number)')
         windower.add_to_chat(55,' ')
+        --]]
         windower.add_to_chat(55,'Content Window Message Time-Out: ct (time in minutes)')
         windower.add_to_chat(55,' ')
         windower.add_to_chat(55,'Set Debug Mode: debug or d')
@@ -309,9 +315,11 @@ windower.register_event('addon command', function(command, ...)
         end
         windower.add_to_chat(55,'Content Window Max Minutes:  '..settings.max_minutes)
         windower.add_to_chat(55,'Content Window Block List:')
+        --[[
         for i = 1,table.getn(settings.block_list) do 
           windower.add_to_chat(55,settings.block_list[i]..'\n')
         end
+        --]]
 
         return
   end
@@ -410,15 +418,14 @@ windower.register_event('addon command', function(command, ...)
     end
   end
 
-  
-  -- allow list remove
+ --[[ 
   if command == 'content_block' or command == 'cb' then
     if args[1] then
       n = table.getn(info.xgboost_players)
       j = tonumber(args[1])
       if j ~= nil then
         if (j > 0) and ( j <= n) then
-          windower.add_to_chat(55,'Removing: '..info.xgboost_players[j]) 
+          windower.add_to_chat(55,'Blocking blocking: '..info.xgboost_players[j]) 
           table.insert(settings.block_list,info.xgboost_players[j])
           settings:save() 
           table.remove(info.xgboost_players,j)
@@ -433,6 +440,28 @@ windower.register_event('addon command', function(command, ...)
       return
     end
   end
+
+  if command == 'content_block_remove' or command == 'cbr' then
+    if args[1] then
+      n = table.getn(info.xgboost_players)
+      restore_player_name = args[1]
+      windower.add_to_chat(55,'trying to remove from content blocking: '..restore_player_name) 
+      if restore_player_name ~= nil then
+        for j =1,n do
+          if( restore_player_name == settings.block_list[j]) then
+            table.remove(info.settings.block_list,j)
+            windower.add_to_chat(55,'Removed from content blocking: '..restore_player_name) 
+            break
+          end
+          settings:save() 
+        end
+      return
+      end
+      windower.add_to_chat(55,'Not a valid player name: '..args[1]) 
+      return
+    end
+  end
+  --]]
 
   -- debug mode
   if command == 'debug' or command == 'd' then
