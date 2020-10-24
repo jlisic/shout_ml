@@ -13,6 +13,5 @@ Commands:
 //sml d                       -  debug (show classification probabilities).
 //sml show                    -  show content window.
 //sml hide                    -  hide content window.
-//sml cb                      -  block player from content window (nothing else).
 //sml ct                      -  set max time to keep a yell on the content window after last shout.
 ```
