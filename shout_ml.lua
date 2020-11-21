@@ -13,7 +13,7 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 
 
 _addon.name = 'shout_ml'
-_addon.version = '1.00'
+_addon.version = '1.01'
 _addon.author = 'Epigram (Asura)'
 _addon.command = 'sml'
 
@@ -87,8 +87,8 @@ info.xgboost_messages_time = {}
 
 
 -- get player names
-player = windower.ffxi.get_player()
-player_name      = player['name']
+--player = windower.ffxi.get_player()
+--player_name      = player['name']
 
 
 
