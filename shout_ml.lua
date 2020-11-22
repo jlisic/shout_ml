@@ -13,7 +13,7 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 
 
 _addon.name = 'shout_ml'
-_addon.version = '1.01'
+_addon.version = '1.02'
 _addon.author = 'Epigram (Asura)'
 _addon.command = 'sml'
 
@@ -86,13 +86,6 @@ info.xgboost_messages = S{}
 info.xgboost_messages_time = {}
 
 
--- get player names
---player = windower.ffxi.get_player()
---player_name      = player['name']
-
-
-
-
 
 -- update the message
 xgboost_update_text = function( x )
@@ -120,6 +113,7 @@ xgboost_update_text = function( x )
 
   return x
 end
+
 
 
 -- create out box
@@ -151,8 +145,6 @@ windower.register_event('load',function()
   end  
 
 end)
-
-
 
 
 
@@ -214,14 +206,6 @@ windower.register_event('incoming chunk', function(id,data)
       end
         
       if max_class == 1 then
-        --[[
-        for i = 1,table.getn(settings.block_list) do 
-          if shouter == settings.block_list[i] then
-           return
-          end 
-        end
-        --]]
-        
 
         for i=1,table.getn(info.xgboost_players) do
           if shouter == info.xgboost_players[i] then
@@ -250,7 +234,6 @@ windower.register_event('incoming chunk', function(id,data)
     end
   end
 end)
-
 
 
 
@@ -287,10 +270,6 @@ windower.register_event('addon command', function(command, ...)
         windower.add_to_chat(55,' ')
         windower.add_to_chat(55,'Hide Content Window: hide')
         windower.add_to_chat(55,' ')
-        --[[
-        windower.add_to_chat(55,'Block Player from Content Window: cb (row number)')
-        windower.add_to_chat(55,' ')
-        --]]
         windower.add_to_chat(55,'Content Window Message Time-Out: ct (time in minutes)')
         windower.add_to_chat(55,' ')
         windower.add_to_chat(55,'Set Debug Mode: debug or d')
@@ -315,11 +294,6 @@ windower.register_event('addon command', function(command, ...)
         end
         windower.add_to_chat(55,'Content Window Max Minutes:  '..settings.max_minutes)
         windower.add_to_chat(55,'Content Window Block List:')
-        --[[
-        for i = 1,table.getn(settings.block_list) do 
-          windower.add_to_chat(55,settings.block_list[i]..'\n')
-        end
-        --]]
 
         return
   end
@@ -418,51 +392,6 @@ windower.register_event('addon command', function(command, ...)
     end
   end
 
- --[[ 
-  if command == 'content_block' or command == 'cb' then
-    if args[1] then
-      n = table.getn(info.xgboost_players)
-      j = tonumber(args[1])
-      if j ~= nil then
-        if (j > 0) and ( j <= n) then
-          windower.add_to_chat(55,'Blocking blocking: '..info.xgboost_players[j]) 
-          table.insert(settings.block_list,info.xgboost_players[j])
-          settings:save() 
-          table.remove(info.xgboost_players,j)
-          table.remove(info.xgboost_messages,j)
-          table.remove(info.xgboost_messages_time,j)
-          return
-        end
-        windower.add_to_chat(55,'Not a valid row: '..j..n) 
-        return
-      end
-      windower.add_to_chat(55,'Not a valid row: '..args[1]) 
-      return
-    end
-  end
-
-  if command == 'content_block_remove' or command == 'cbr' then
-    if args[1] then
-      n = table.getn(info.xgboost_players)
-      restore_player_name = args[1]
-      windower.add_to_chat(55,'trying to remove from content blocking: '..restore_player_name) 
-      if restore_player_name ~= nil then
-        for j =1,n do
-          if( restore_player_name == settings.block_list[j]) then
-            table.remove(info.settings.block_list,j)
-            windower.add_to_chat(55,'Removed from content blocking: '..restore_player_name) 
-            break
-          end
-          settings:save() 
-        end
-      return
-      end
-      windower.add_to_chat(55,'Not a valid player name: '..args[1]) 
-      return
-    end
-  end
-  --]]
-
   -- debug mode
   if command == 'debug' or command == 'd' then
     if xgboost_debug then
@@ -474,7 +403,6 @@ windower.register_event('addon command', function(command, ...)
     end
     return
   end
-
 
 end)
           
@@ -494,10 +422,16 @@ windower.register_event('time change', function(new, old)
   end
 end)
 
+
+
+-- on login
 windower.register_event('login', function(command, ...)
   init_allow_list:schedule(1)
 end)
-          
+
+
+
+-- on logout
 windower.register_event('logout', function()
     shout_box:hide(info)
 end)
