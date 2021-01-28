@@ -13,7 +13,7 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 
 
 _addon.name = 'shout_ml'
-_addon.version = '1.02'
+_addon.version = '1.50'
 _addon.author = 'Epigram (Asura)'
 _addon.command = 'sml'
 
@@ -21,6 +21,8 @@ _addon.command = 'sml'
 require('luau')
 require('xgboost_score')
 require('string')
+socket = require('socket')
+http = require('socket.http')
 texts = require('texts')
 packets = require('packets')
 config = require('config')
@@ -28,6 +30,12 @@ bit = require('bit')
 require('sets')
 
 ---------------------------------- load defaults ----------------------------
+
+-- start id
+local start_id = 0
+
+local in_town_zones = {26,50,53,230,231,232,233,234,235,236,237,238,240,241,242,243,244,245,246, 247,248,249,250,252,256,257}
+
 defaults = {}
 defaults.display = {}
 defaults.display.pos = {}
@@ -54,6 +62,10 @@ defaults.allow_list = ''
 
 -- window function
 defaults.max_minutes = 10
+
+-- log function
+defaults.send_to_server = false
+defaults.pull_from_server = false
 
 -- initial allow list
 
@@ -85,6 +97,8 @@ info.xgboost_players = S{}
 info.xgboost_messages = S{}
 info.xgboost_messages_time = {}
 
+-- used to avoid spamming messages
+local message_iter = 0
 
 
 -- update the message
@@ -150,7 +164,9 @@ end)
 
 -- on shout
 windower.register_event('incoming chunk', function(id,data)
+
   if id == 0x017 then
+ 
 
     -- get the basic chat
     local chat = packets.parse('incoming', data)
@@ -158,8 +174,40 @@ windower.register_event('incoming chunk', function(id,data)
     -- clean up chat for scoring
     local clean_text = windower.convert_auto_trans(chat['Message']):lower()
      
-    -- check if it is a yell (maye I should add more cats later
+    -- check if it is a yell (maybe I should add more cats later)
     if (chat['Mode'] == 26) or (chat['Mode'] == 1) then
+    
+      -- check if we are in a city
+      get_info = windower.ffxi.get_info()
+  
+      valid_zone = false
+      for i,zone in pairs(in_town_zones) do 
+        if zone == get_info['zone'] then
+          valid_zone = true
+        end
+      end
+  
+      if valid_zone == false then
+        return nil
+      end
+
+
+      -- if enabled logged
+      if( settings.log_to_server ) then 
+
+        if( message_iter > 0 ) then
+          message_iter = 0
+
+          url="http://meanmean.me:8000/message.php?sender="..chat['Sender Name'].."&server="..get_info['server'].."&msg="..clean_text
+          http.request{url=url, create=function()
+            local req_sock = socket.tcp()
+            req_sock:settimeout(0.1,'t')
+            return req_sock
+          end}
+        end
+
+        message_iter = message_iter + 1
+      end
 
       shouter = chat['Sender Name']
 
@@ -273,6 +321,9 @@ windower.register_event('addon command', function(command, ...)
         windower.add_to_chat(55,'Content Window Message Time-Out: ct (time in minutes)')
         windower.add_to_chat(55,' ')
         windower.add_to_chat(55,'Set Debug Mode: debug or d')
+        windower.add_to_chat(55,' ')
+        windower.add_to_chat(55,' ')
+        windower.add_to_chat(55,'Pull out-of-town messages: pull or p')
         return
   end
   
@@ -286,6 +337,11 @@ windower.register_event('addon command', function(command, ...)
         windower.add_to_chat(55,'(6) Selling (non-Merc) '..settings.xgboost.class_threshold[6])
         windower.add_to_chat(55,'(7) Buying (non-Merc) '..settings.xgboost.class_threshold[7])
         windower.add_to_chat(55,'(8) Unknown '..settings.xgboost.class_threshold[8])
+        if( settings.log_to_server ) then
+          windower.add_to_chat(55,'Logging Enabled')
+        else
+          windower.add_to_chat(55,'Logging Disabled')
+        end
         windower.add_to_chat(55,'Allow-List:')
         for w in pairs(allow_list) do
           if w ~= '' then
@@ -404,6 +460,32 @@ windower.register_event('addon command', function(command, ...)
     return
   end
 
+  -- server logging mode
+  if command == 'log' or command == 'l' then
+    if settings.log_to_server then
+      settings.log_to_server = false
+        windower.add_to_chat(55,'Logging to server OFF')
+    else 
+      settings.log_to_server = true
+      windower.add_to_chat(55,'Logging to server ON')
+    end
+    settings:save()
+    return
+  end
+  
+  -- server logging mode
+  if command == 'pull' or command == 'p' then
+    if settings.pull_from_server then
+      settings.pull_from_server = false
+        windower.add_to_chat(55,'Pulling from server OFF')
+    else 
+      settings.pull_from_server = true
+      windower.add_to_chat(55,'Pulling from server ON')
+    end
+    settings:save()
+    return
+  end
+
 end)
           
   
@@ -422,6 +504,193 @@ windower.register_event('time change', function(new, old)
   end
 end)
 
+-- out of town updates
+windower.register_event('time change', function(new, old)
+
+  if settings.pull_from_server then
+    -- check if we are in a city
+    get_info = windower.ffxi.get_info()
+  
+    valid_zone = false
+    for i,zone in pairs(in_town_zones) do 
+      if zone == get_info['zone'] then
+        valid_zone = true
+      end
+    end
+  
+    if valid_zone then
+      return nil
+    end
+  
+    --windower.add_to_chat(82,'out of town')
+   
+    local body, statusCode, headers, statusText = http.request('http://meanmean.me:8000/output.php?server='..get_info['server'])
+  
+  
+    local id = start_id 
+    local max_id = id
+    
+    -- we want to get 
+    
+    local i=""
+    local k=1
+    local cur_player = ""
+    local cur_msg = ""
+    while( i ~= nil ) do
+      i,j = string.find( body, "," )
+      l,j = string.find( body, '\n' )
+     
+      if( i ~= nil) then 
+        if( j ~= nil) then 
+          if( l < i ) then 
+            i = l 
+          end
+        end
+      end
+      
+      cur_item = string.sub( body, 0,i) 
+    
+      cur_item = string.gsub(cur_item, ",", "")
+      cur_item = string.gsub(cur_item, "^ ", "")
+    
+      -- get the id
+      if( k == 1 ) then
+        id = tonumber(cur_item)
+      end
+      
+      -- get what we want
+      if( id ~= nil) then 
+
+        -- get date
+        if(k == 2) then
+          cur_date = cur_item
+        end
+        -- get name
+        if(k == 3) then
+          cur_player = cur_item
+        end
+        -- get msg 
+        if(k == 4) then
+          cur_item = string.gsub(cur_item, ",", "")
+          clean_text = cur_item
+        end
+      end
+      
+      -- if a newline reset counter
+      l,j = string.find( cur_item, '\n' )
+      if( l ~= nil ) then 
+        if( cur_player ~= "") then
+          if( id > start_id ) then
+
+            -----------------------------------
+            --  start scoring
+            -----------------------------------
+            -- if we can't score we are done
+            if booster == nil then
+              return nil 
+            end
+      
+      
+            -- check if there is an allow list option
+            for w in pairs(allow_list) do
+              if w ~= '' then
+                if windower.regex.match( clean_text, w:lower()) ~= nil then
+                  return 
+                end
+              end
+            end
+      
+      
+            -- calculate 
+            xgboost_value = build_features( clean_text, xgboost_key_words )
+            class_score = eval_phrase( xgboost_value, xgboost_booster,xgboost_classes) 
+            max_score = 0
+            max_class = 1
+            
+      
+            for i = 1,xgboost_classes do
+      
+              if( class_score[i] > max_score ) then
+                max_score = class_score[i]
+                max_class = i
+              end
+      
+            end
+      
+      
+            if xgboost_debug then
+              windower.add_to_chat(55,'Shout Type:  '..xgboost_class_names[max_class]..', Probability = '.. max_score.. ' threshold = '..settings.xgboost.class_threshold[max_class])
+            end
+      
+            -- block if above a threshold
+            if max_score < settings.xgboost.class_threshold[max_class] then
+              windower.add_to_chat(176, "["..string.sub(cur_date,12).."] "..cur_player .. string.format(": %60s", clean_text))
+            end
+
+
+                  
+            if max_class == 1 then
+      
+              for i=1,table.getn(info.xgboost_players) do
+                if cur_player == info.xgboost_players[i] then
+                  table.remove(info.xgboost_players,i)
+                  table.remove(info.xgboost_messages,i)
+                  table.remove(info.xgboost_messages_time,i)
+                  break
+                end
+              end
+      
+              if table.getn(info.xgboost_players) >= info.xgboost_max_index then
+                  table.remove(info.xgboost_players,info.xgboost_max_index)
+                  table.remove(info.xgboost_messages,info.xgboost_max_index)
+                  table.remove(info.xgboost_messages_time,info.xgboost_max_index)
+              end
+              
+              table.insert(info.xgboost_players,cur_player)
+              table.insert(info.xgboost_messages,clean_text)
+              table.insert(info.xgboost_messages_time,os.time())
+      
+              info = xgboost_update_text( info)
+      
+              shout_box:update(info)
+            end
+
+            -------------------
+            -- finished scoring
+            -------------------
+
+          end
+        end
+        k = 1
+      else
+        k = k + 1
+      end
+      
+      
+      -- iterate string and query item within a line 
+      if( i ~= nil ) then
+        body = string.sub( body, i+1)
+      end
+   
+      -- find max id
+      if( id ~= nil) then 
+        if( id > max_id) then
+          max_id = id
+        end
+      end 
+      
+    
+    end
+    
+    -- update global id to the most up-to-date
+    if( max_id ~= nil) then 
+      if( max_id > start_id) then
+        start_id = max_id
+      end
+    end 
+  end
+
+end)
 
 
 -- on login
