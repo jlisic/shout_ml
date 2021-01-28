@@ -507,6 +507,11 @@ end)
 -- out of town updates
 windower.register_event('time change', function(new, old)
 
+  -- minimize update rate
+  if new % 3 ~= 0 then
+    return
+  end
+
   if settings.pull_from_server then
     -- check if we are in a city
     get_info = windower.ffxi.get_info()
