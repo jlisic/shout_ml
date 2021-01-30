@@ -13,7 +13,7 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 
 
 _addon.name = 'shout_ml'
-_addon.version = '1.50'
+_addon.version = '1.5.1'
 _addon.author = 'Epigram (Asura)'
 _addon.command = 'sml'
 
