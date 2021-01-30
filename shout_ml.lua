@@ -197,6 +197,8 @@ windower.register_event('incoming chunk', function(id,data)
 
         if( message_iter > 0 ) then
           message_iter = 0
+          clean_text = string.gsub(clean_text, "\n", "")
+          clean_text = string.gsub(clean_text, "\r", "")
 
           url="http://meanmean.me:8000/message.php?sender="..chat['Sender Name'].."&server="..get_info['server'].."&msg="..clean_text
           http.request{url=url, create=function()
@@ -629,7 +631,7 @@ windower.register_event('time change', function(new, old)
       
             -- block if above a threshold
             if max_score < settings.xgboost.class_threshold[max_class] then
-              windower.add_to_chat(176, "["..string.sub(cur_date,12).."] "..cur_player .. string.format(": %60s", clean_text))
+              windower.add_to_chat(176, "["..string.sub(cur_date,12).."] "..cur_player .. string.format(": %s", string.sub(clean_text,1,80)))
             end
 
 
